@@ -1,0 +1,2 @@
+# id-generator
+实现了twitter的snowflake，参考snowflake机制实现了一个基于时间的UUID的修改版本，生成有序递增的UUID
