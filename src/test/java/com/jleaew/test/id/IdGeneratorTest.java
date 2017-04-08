@@ -9,13 +9,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.jleaew.id.HibernateCustomVersionOneLikeUUIDGenerator;
 import com.jleaew.id.IdGenerator;
-import com.jleaew.id.RandomUuidGenerator;
+import com.jleaew.id.MongoObjectIdGenerator;
+import com.jleaew.id.RandomUUIDGenerator;
 import com.jleaew.id.SnowflakeIdGenerator;
-import com.jleaew.id.TimedSequencedUuidGenerator;
+import com.jleaew.id.TimedSequencedUUIDGenerator;
 
 public class IdGeneratorTest {
-    
+
     @Test
     public void testSnowflakeId() throws InterruptedException {
         System.out.println("------------- snowflake ----------------");
@@ -25,37 +27,67 @@ public class IdGeneratorTest {
     }
     
     @Test
-    public void testTimedSequencedUuid() throws InterruptedException {
+    public void testTimedSequencedUUID() throws InterruptedException {
         System.out.println("------------- Timed Sequenced UUID ----------------");
-        testGenerator(TimedSequencedUuidGenerator.get());
+        testGenerator(TimedSequencedUUIDGenerator.get());
         System.out.println("------------- Timed Sequenced UUID benchmark----------------");
-        testGeneratorBenchmark(TimedSequencedUuidGenerator.get());
+        testGeneratorBenchmark(TimedSequencedUUIDGenerator.get());
     }
     
     @Test
-    public void testRandomUuid() throws InterruptedException {
+    public void testRandomUUID() throws InterruptedException {
         System.out.println("------------- Random UUID ----------------");
-        testGenerator(RandomUuidGenerator.get());
+        testGenerator(RandomUUIDGenerator.get());
         System.out.println("------------- Random UUID benchmark----------------");
-        testGeneratorBenchmark(RandomUuidGenerator.get());
+        testGeneratorBenchmark(RandomUUIDGenerator.get());
+    }
+    
+    public void testHibernateCustomVersionOneLikeUUID() throws InterruptedException {
+        // Hibernate自定义UUID生成策略在同一JVM进程内高并发大于 65536 tpms 时会产生重复ID
+        // 该策略每毫秒生成不重复的ID数为： 65536 = 1 << 16, 当
+        System.out.println("------------- HibernateCustomVersionOneLike UUID ----------------");
+        testGenerator(HibernateCustomVersionOneLikeUUIDGenerator.get());
+        benchmarkHibernateCustomVersionOneLikeUUID();
+    }
+    
+    @Test
+    public void benchmarkHibernateCustomVersionOneLikeUUID() throws InterruptedException {
+        System.out.println("------------- HibernateCustomVersionOneLike UUID benchmark----------------");
+        testGeneratorBenchmark(HibernateCustomVersionOneLikeUUIDGenerator.get());
+    }
+    
+    public void testMongoObjectId() throws InterruptedException {
+        // MongoDB的ObjectID生成策略在同一JVM进程内高并发大于 16777216 tps 时会产生重复ID
+        // 该策略每秒生成不重复的ID的最大数量为： 16777216 = 1 << 24
+        System.out.println("------------- MongoObjectId ----------------");
+        testGenerator(MongoObjectIdGenerator.get());
+        benchmarkMongoObjectId();
+    }
+    
+    @Test
+    public void benchmarkMongoObjectId() throws InterruptedException {
+        System.out.println("------------- MongoObjectId benchmark----------------");
+        testGeneratorBenchmark(MongoObjectIdGenerator.get());
     }
     
     private static void preheat(IdGenerator generator, long time) {
         long st = System.currentTimeMillis();
         while (true) {
-            generator.next();
+            System.out.println(generator.next());
             if (System.currentTimeMillis() - st > time) {
                 break;
             }
         }
     }
     
+    private static final int threads = 64;
+    
     private static void testGenerator(IdGenerator generator) throws InterruptedException {
         preheat(generator, 10);
         
         Map<Serializable, Serializable> data = new ConcurrentHashMap<>(7000000);
         
-        boolean[] stop = new boolean[64];
+        boolean[] stop = new boolean[threads];
         int[] count = new int[stop.length];
         AtomicInteger activeCount = new AtomicInteger(stop.length);
         
@@ -97,7 +129,7 @@ public class IdGeneratorTest {
     private static void testGeneratorBenchmark(IdGenerator generator) throws InterruptedException {
         preheat(generator, 10);
 
-        boolean[] stop = new boolean[64];
+        boolean[] stop = new boolean[threads];
         int[] count = new int[stop.length];
         AtomicInteger activeCount = new AtomicInteger(stop.length);
         
@@ -137,7 +169,9 @@ public class IdGeneratorTest {
     public static void main(String[] args) throws Exception {
         IdGeneratorTest test = new IdGeneratorTest();
         test.testSnowflakeId();
-        test.testTimedSequencedUuid();
-        test.testRandomUuid();
+        test.testTimedSequencedUUID();
+        test.testRandomUUID();
+        test.testHibernateCustomVersionOneLikeUUID();
+        test.testMongoObjectId();
     }
 }

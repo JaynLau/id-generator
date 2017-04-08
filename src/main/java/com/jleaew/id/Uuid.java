@@ -17,11 +17,11 @@ public class Uuid implements Serializable, Comparable<Uuid> {
 
     private final UUID id;
     
-    public Uuid(long mostSigBits, long leastSigBits) {
+    private Uuid(long mostSigBits, long leastSigBits) {
         this.id = new UUID(mostSigBits, leastSigBits);
     }
     
-    public Uuid(byte[] data) {
+    private Uuid(byte[] data) {
         if (data.length != 16) {
             throw new IllegalArgumentException("data must be 16 bytes in length");
         }
@@ -145,39 +145,39 @@ public class Uuid implements Serializable, Comparable<Uuid> {
     /**
      * 基于MD5构造UUID
      */
-    public static Uuid md5Named(byte[] name) {
+    public static UUID md5Named(byte[] name) {
         byte[] bytes = digest(name, "MD5");
         bytes[6]  &= 0x0f;  /* clear version        */
         bytes[6]  |= 0x30;  /* set to version 3     */
         bytes[8]  &= 0x3f;  /* clear variant        */
         bytes[8]  |= 0x80;  /* set to IETF variant  */
-        return new Uuid(bytes);
+        return new Uuid(bytes).toUUID();
     }
 
     /**
      * 基于MD5构造UUID
      */
-    public static Uuid md5Named(CharSequence name) {
+    public static UUID md5Named(CharSequence name) {
         return md5Named(name.toString().getBytes());
     }
 
     /**
      * 基于SHA-1构造UUID
      */
-    public static Uuid sha1Named(byte[] name) {
+    public static UUID sha1Named(byte[] name) {
         byte[] bytes = digest(name, "SHA-1");
         bytes = Arrays.copyOfRange(bytes, 0, 16);
         bytes[6]  &= 0x0f;  /* clear version        */
         bytes[6]  |= 0x50;  /* set to version 5     */
         bytes[8]  &= 0x3f;  /* clear variant        */
         bytes[8]  |= 0x80;  /* set to IETF variant  */
-        return new Uuid(bytes);
+        return new Uuid(bytes).toUUID();
     }
 
     /**
      * 基于SHA-1构造UUID
      */
-    public static Uuid sha1Named(CharSequence name) {
+    public static UUID sha1Named(CharSequence name) {
         return sha1Named(name.toString().getBytes());
     }
     
@@ -192,20 +192,20 @@ public class Uuid implements Serializable, Comparable<Uuid> {
     /**
      * 基于随机算法的UUID，JDK的UUID实现
      */
-    public static Uuid random() {
+    public static UUID random() {
         byte[] randomBytes = new byte[16];
         Holder.PRNG.nextBytes(randomBytes);
         randomBytes[6]  &= 0x0f;  /* clear version        */
         randomBytes[6]  |= 0x40;  /* set to version 4     */
         randomBytes[8]  &= 0x3f;  /* clear variant        */
         randomBytes[8]  |= 0x80;  /* set to IETF variant  */
-        return new Uuid(randomBytes);
+        return new Uuid(randomBytes).toUUID();
     }
     
     /**
      * 基于时间算法的一个变体，生成基于时间序的UUID
      */
-    public static Uuid timeSequenced() {
-        return (Uuid) TimedSequencedUuidGenerator.get().next();
+    public static UUID timeSequenced() {
+        return (UUID) TimedSequencedUUIDGenerator.get().next();
     }
 }

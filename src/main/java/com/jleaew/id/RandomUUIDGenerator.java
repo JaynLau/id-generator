@@ -1,20 +1,20 @@
 package com.jleaew.id;
 
-import java.io.Serializable;
+import java.util.UUID;
 
-public class RandomUuidGenerator implements IdGenerator {
+public class RandomUUIDGenerator implements IdGenerator {
     
     /**
      * the most compatible with jdk uuid, generate a version 4 uuid with a security PRNG.
      */
     @Override
-    public Serializable next() {
+    public UUID next() {
         return Uuid.random();
     }
 
     private enum Singleton {
         INSTANCE;
-        private final IdGenerator value = new RandomUuidGenerator();
+        private final IdGenerator value = new RandomUUIDGenerator();
     }
     
     public static IdGenerator get() {
